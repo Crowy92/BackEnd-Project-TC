@@ -14,10 +14,32 @@ const postComment = (body, artId) => {
     })
 }
 
-const getArtComs = (id, sort_by, order) => {
-    return connection.select('*').from('comments').leftJoin('articles'
-        , 'articles.article_id', 'comments.article_id')
+const getArtComs = ({ article_id }, sort_by, order) => {
+    return connection.select('comments.*')
+        .from('comments')
+        .where('comments.article_id', article_id)
+        .leftJoin('articles'
+            , 'articles.article_id', 'comments.article_id')
         .orderBy(`comments.${sort_by || 'created_at'}`, order || "desc")
 }
 
-module.exports = { findComments, postComment, getArtComs }
+const findComment = (comment_id) => {
+    return connection('comments').select('*').where({ comment_id }).first()
+}
+
+const changeComment = (comment_id, votes) => {
+    return findComment(comment_id).then((comment) => {
+        const totalVotes = comment.votes + votes;
+        return connection('comments').where({ comment_id })
+            .update({ votes: totalVotes }).returning('*').then((updated) => {
+                return updated[0];
+            })
+    })
+}
+
+const removeComment = (comment_id) => {
+    return connection('comments').where({ comment_id })
+        .del();
+}
+
+module.exports = { findComments, postComment, getArtComs, changeComment, removeComment }

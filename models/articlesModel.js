@@ -14,8 +14,16 @@ const updateArticle = (votes, article_id) => {
     })
 }
 
-const fetchArticles = () => {
-    return connection('articles').select('*')
+const fetchArticles = (sort_by, order, author, topic) => {
+    return connection.select('articles.*').from('articles')
+        .count({ comment_count: 'comment_id' })
+        .leftJoin('comments', 'articles.article_id', 'comments.article_id')
+        .groupBy('articles.article_id')
+        .orderBy(sort_by || "created_at", order || "desc")
+        .modify((query) => {
+            if (author) query.where('articles.author', author);
+            if (topic) query.where({ topic });
+        })
 }
 
 module.exports = { findArticle, updateArticle, fetchArticles }

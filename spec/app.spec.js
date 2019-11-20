@@ -45,12 +45,20 @@ describe('/api', () => {
                         'body', 'topic', 'created_at', 'votes', 'comment_count')
                 })
         });
-        it('GET for an invalid article_id - status:400 and error message', () => {
+        it('GET for a non existant article_id - status:404 and error message', () => {
             return request(app)
                 .get('/api/articles/999')
                 .expect(404)
                 .then(({ body }) => {
                     expect(body.msg).to.equal('Not found');
+                });
+        });
+        it('GET for an invalid article_id - status:400 bad request', () => {
+            return request(app)
+                .get('/api/articles/banana')
+                .expect(400)
+                .then(({ body }) => {
+                    expect(body.msg).to.equal('Bad request');
                 });
         });
         it('PATCH 202:article_id updates an article by adding in votes with a body', () => {
@@ -70,13 +78,22 @@ describe('/api', () => {
                         })
                 })
         });
-        it('PATCH for an invalid article_id - status:404 and error message', () => {
+        it('PATCH for an non-existant article_id - status:404 and error message', () => {
             return request(app)
                 .patch('/api/articles/999')
                 .send({ inc_votes: 5 })
                 .expect(404)
                 .then(({ body }) => {
                     expect(body.msg).to.equal('Item not found');
+                });
+        });
+        it('PATCH for an invalid article_id - status:400 bad request', () => {
+            return request(app)
+                .patch('/api/articles/banana')
+                .send({ inc_votes: 'bird' })
+                .expect(400)
+                .then(({ body }) => {
+                    expect(body.msg).to.equal('Bad request');
                 });
         });
         it('POST 201 updates the file and returns the posted article', () => {
@@ -89,42 +106,134 @@ describe('/api', () => {
                         'article_id', 'author')
                 })
         });
+        it('POST for an invalid article_id - status:400 bad request', () => {
+            return request(app)
+                .post('/api/articles/banana/comments')
+                .send({ inc_votes: 'bird' })
+                .expect(400)
+                .then(({ body }) => {
+                    expect(body.msg).to.equal('Bad request');
+                });
+        });
         it('GET 200 responds with an array of comments for a specific article', () => {
             return request(app)
-                .get('/api/articles/3/comments')
+                .get('/api/articles/1/comments')
                 .expect(200)
                 .then(({ body }) => {
                     expect(body.comments[0]).to.contain.keys('created_at', 'body', 'votes',
                         'article_id', 'author')
+                })
+        });
+        it('GET 404 responds a not found message if none can be found', () => {
+            return request(app)
+                .get('/api/articles/343/comments')
+                .expect(404)
+                .then(({ body }) => {
+                    expect(body.msg).to.equal('Not found');
                 })
         });
         it('GET 200 responds with an array sorted by a query', () => {
             return request(app)
-                .get('/api/articles/3/comments?sort_by=body')
+                .get('/api/articles/1/comments?sort_by=votes')
                 .expect(200)
                 .then(({ body }) => {
                     expect(body.comments[0]).to.contain.keys('created_at', 'body', 'votes',
                         'article_id', 'author')
-                    expect(body.comments[0].body).to.equal('Bastet walks amongst us, and the cats are taking arms!')
+                    expect(body.comments[0].votes).to.equal(100)
+                })
+        });
+        it('GET reponds with an error if asked to sort by something that doesn"t exist', () => {
+            return request(app)
+                .get('/api/articles/1/comments?sort_by=pineapple')
+                .expect(400)
+                .then(({ body }) => {
+                    expect(body.msg).to.equal('Bad request');
                 })
         });
         it('GET 200 responds with an array sorted by a query in a specified order', () => {
             return request(app)
-                .get('/api/articles/3/comments?sort_by=body&order=asc')
+                .get('/api/articles/1/comments?sort_by=body&order=asc')
                 .expect(200)
                 .then(({ body }) => {
                     expect(body.comments[0]).to.contain.keys('created_at', 'body', 'votes',
                         'article_id', 'author')
-                    expect(body.comments[0].body).to.equal('I find this existence challenging')
+                    expect(body.comments[0].body).to.equal('Ambidextrous marsupial')
                 })
         });
-        it('GET articles 200 responds with an array of all articles', () => {
+        it('GET articles 200 responds with an array of all articles including their comment count', () => {
             return request(app)
                 .get('/api/articles')
                 .expect(200)
                 .then(({ body }) => {
                     expect(body.articles).to.be.an('array')
                     expect(body.articles[0]).to.contain.keys('author', 'body', 'title', 'article_id', 'topic', 'created_at', 'votes', 'comment_count')
+                })
+        });
+        it('DELETE request on api/articles responds with method not allowed message', () => {
+            return request(app)
+                .post('/api/articles')
+                .expect(405)
+                .then(({ body }) => {
+                    expect(body.msg).to.equal('Method not allowed')
+                })
+        });
+        it('GET articles 200 responds with an array filtered by topic and sorted', () => {
+            return request(app)
+                .get('/api/articles?topic=mitch&sort_by=comment_count')
+                .expect(200)
+                .then(({ body }) => {
+                    expect(body.articles).to.be.an('array')
+                    expect(body.articles[0].topic).to.equal('mitch')
+                    expect(body.articles[0].comment_count).to.equal('13')
+                })
+        });
+        it('GET articles 400 responds with an error if query is bad', () => {
+            return request(app)
+                .get('/api/articles?topic=mitch&sort_by=strawberries')
+                .expect(400)
+                .then(({ body }) => {
+                    expect(body.msg).to.equal('Bad request');
+                })
+        });
+        it('GET articles 404 responds with a not found if search includes non-existant criteria', () => {
+            return request(app)
+                .get('/api/articles?topic=strawberry')
+                .expect(404)
+                .then(({ body }) => {
+                    expect(body.msg).to.equal('Not found');
+                })
+        });
+        it('GET articles 200 responds with an array filtered by author', () => {
+            return request(app)
+                .get('/api/articles?author=icellusedkars')
+                .expect(200)
+                .then(({ body }) => {
+                    expect(body.articles).to.be.an('array')
+                    expect(body.articles[0].author).to.equal('icellusedkars')
+                })
+        });
+    });
+    describe('/comments', () => {
+        it('202 comment updated with new votes returned', () => {
+            return request(app)
+                .patch('/api/comments/4')
+                .send({ inc_votes: 13 })
+                .expect(202)
+                .then(({ body }) => {
+                    expect(body.comment.votes).to.equal(-87)
+                })
+        });
+        it('204 comment deleted and message returned when provided valid id', () => {
+            return request(app)
+                .delete('/api/comments/4')
+                .expect(204)
+        });
+        it('404 returns a message telling the user there was no such comment if none is found', () => {
+            return request(app)
+                .delete('/api/comments/5555')
+                .expect(404)
+                .then(({ body }) => {
+                    expect(body.msg).to.equal('Not found')
                 })
         });
     });
