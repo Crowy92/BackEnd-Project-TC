@@ -1,9 +1,13 @@
 const { changeComment, removeComment } = require('../models/commentsModel')
 
 exports.patchComment = (req, res, next) => {
-    changeComment(req.params.comment_id, req.body.inc_votes).then((comment) => {
-        res.status(202).send({ comment })
-    })
+    changeComment(req.params.comment_id, req.body.inc_votes)
+        .then((comment) => {
+            if (comment) res.status(200).send({ comment })
+            else res.status(404).send({ msg: 'Not found' })
+        }).catch((err) => {
+            next(err)
+        })
 }
 
 exports.deleteComment = (req, res, next) => {

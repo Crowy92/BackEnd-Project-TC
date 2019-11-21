@@ -8,10 +8,14 @@ app.use('/api', apiRouter)
 app.all('/*', (req, res, next) => res.status(404).send('Route not found'));
 
 app.use((err, req, res, next) => {
-    const psqlCodes = ['22P02', '42703']
-    if (psqlCodes.includes(err.code)) {
+    const Codes400 = ['22P02', '42703', '23502']
+    const Codes404 = ['23503']
+    if (Codes400.includes(err.code)) {
         res.status(400).send({ msg: 'Bad request' })
-    } else next(err)
+    } else if (Codes404.includes(err.code)) {
+        res.status(404).send({ msg: 'Not found' })
+    }
+    else next(err)
 })
 
 app.use((err, req, res, next) => {

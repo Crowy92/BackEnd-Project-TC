@@ -27,14 +27,11 @@ const findComment = (comment_id) => {
     return connection('comments').select('*').where({ comment_id }).first()
 }
 
-const changeComment = (comment_id, votes) => {
-    return findComment(comment_id).then((comment) => {
-        const totalVotes = comment.votes + votes;
-        return connection('comments').where({ comment_id })
-            .update({ votes: totalVotes }).returning('*').then((updated) => {
-                return updated[0];
-            })
-    })
+const changeComment = (comment_id, votes = 0) => {
+    return connection('comments').where({ comment_id })
+        .increment({ votes }).returning('*').then((updated) => {
+            return updated[0];
+        })
 }
 
 const removeComment = (comment_id) => {
