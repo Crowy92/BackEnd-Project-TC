@@ -16,6 +16,15 @@ describe('/api', () => {
                     expect(body.topics[0]).to.contain.keys('description', 'slug')
                 })
         })
+        it('POST 201, responds with the added topic', () => {
+            return request(app)
+                .post('/api/topics')
+                .send({ slug: "beans", description: "beans, beans good for your heart" })
+                .expect(201)
+                .then(({ body }) => {
+                    expect(body.topic).to.be.an('object')
+                })
+        });
     })
     describe('/users', () => {
         it('GET 200 responds with username, avatar and name of specified user', () => {
