@@ -1,7 +1,7 @@
 exports.formatDates = list => {
-
+    let localList = [...list];
     const formattedDates = [];
-    list.forEach(article => {
+    localList.forEach(article => {
         article.created_at = new Date(article.created_at)
         formattedDates.push(article);
     })
@@ -17,7 +17,6 @@ exports.makeRefObj = list => {
 };
 
 exports.formatComments = (comments, articleRef) => {
-    console.log(comments)
     let localComments = [...comments]
     localComments = localComments.map(comment => {
         const localComment = { ...comment }
@@ -28,6 +27,5 @@ exports.formatComments = (comments, articleRef) => {
         localComment.created_at = new Date(localComment.created_at)
         return localComment
     });
-    console.log(localComments)
     return localComments;
 };

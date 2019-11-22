@@ -8,11 +8,18 @@ const findArticle = (article_id) => {
         .leftJoin('comments', 'articles.article_id', 'comments.article_id')
         .groupBy('articles.article_id')
         .first()
+        .then(article => {
+            if (!article) {
+                return Promise.reject({ status: 404, msg: 'Not found' })
+            }
+            return article
+        })
 }
 
 const updateArticle = (votes = 0, article_id) => {
     return connection('articles').where({ article_id })
         .increment({ votes }).returning('*').then((updated) => {
+            if (updated.length < 1) return Promise.reject({ status: 404, msg: 'Not found' })
             return updated[0];
         })
 }
@@ -47,6 +54,9 @@ const createArticle = (body) => {
     const insertObj = {
         title: body.title, body: body.body, topic: body.topic
         , created_at: new Date(), author: body.author
+    }
+    if (!body.body) {
+        return Promise.reject({ status: 400, msg: 'Bad request' })
     }
     return connection('articles').insert(insertObj).returning('*').then((article) => {
         return article[0];

@@ -19,12 +19,14 @@ app.use((err, req, res, next) => {
 })
 
 app.use((err, req, res, next) => {
-    if (err.msg) {
-        res.status(404).send(err.msg)
+    // our error - custom errors!
+    if (err.status) {
+        res.status(err.status).send({ msg: err.msg })
     } else next(err)
 })
 
 app.use((err, req, res, next) => {
+    console.log(err)
     res.status(500).send({ msg: 'Internal server error :(' })
 })
 

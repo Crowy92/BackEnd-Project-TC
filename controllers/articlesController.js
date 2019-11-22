@@ -8,58 +8,34 @@ const { fetchTopic } = require('../models/topicsModel')
 exports.getArticle = (req, res, next) => {
     findArticle(req.params.article_id)
         .then((article) => {
-            if (article) res.status(200).send({ article })
-            else res.status(404).send({ msg: 'Not found' })
-        }).catch((err) => {
-            next(err)
-        })
+            res.status(200).send({ article })
+        }).catch(next)
 }
 
 exports.patchArticle = (req, res, next) => {
     updateArticle(req.body.inc_votes, req.params.article_id).then((article) => {
-        if (article) res.status(200).send({ article })
-        else res.status(404).send({ msg: 'Item not found' })
-    }).catch((err) => {
-        if (err.code) next(err)
-        else res.status(404).send({ msg: 'Item not found' })
-    })
+        res.status(200).send({ article })
+    }).catch(next)
 }
 
 exports.postArticleCom = (req, res, next) => {
     postComment(req.body, req.params.article_id).then((comment) => {
         res.status(201).send({ comment })
-    }).catch((err) => {
-        if (err.code) next(err)
-        else res.status(404).send({ msg: 'Item not found' })
-    })
+    }).catch(next)
 }
 
 exports.postArticle = (req, res, next) => {
     createArticle(req.body).then((article) => {
         res.status(201).send({ article })
-    }).catch((err) => {
-        console.log(err)
-        next(err)
-    })
+    }).catch(next)
 }
 
 exports.getComments = (req, res, next) => {
     getArtComs(req.params, req.query.sort_by, req.query.order, req.query.limit, req.query.p)
         .then((comments) => {
             const total_count = comments.length;
-            if (comments.length < 1) {
-                findArticle(req.params.article_id).then((resp) => {
-                    if (resp) res.status(200).send({ comments, total_count })
-                    else res.status(404).send({ msg: 'Not found' })
-                })
-            }
-            else {
-                res.status(200).send({ comments, total_count })
-            }
-        }).catch((err) => {
-            if (err.code) next(err)
-            else res.status(404).send({ msg: 'Item not found' })
-        })
+            res.status(200).send({ comments, total_count })
+        }).catch(next)
 }
 
 exports.getArticles = (req, res, next) => {
@@ -86,9 +62,8 @@ exports.getArticles = (req, res, next) => {
                     }
                     else res.status(200).send({ articles, total_count })
                 })
-
         }).catch((err) => {
             if (err.code) next(err)
-            else res.status(404).send({ msg: 'Item not found' })
+            else res.status(404).send({ msg: 'Not found' })
         })
 }

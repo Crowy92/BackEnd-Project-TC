@@ -102,7 +102,7 @@ describe('/api', () => {
                 .send({ inc_votes: 5 })
                 .expect(404)
                 .then(({ body }) => {
-                    expect(body.msg).to.equal('Item not found');
+                    expect(body.msg).to.equal('Not found');
                 });
         });
         it('PATCH for an invalid article_id - status:400 bad request', () => {
@@ -410,6 +410,19 @@ describe('/api', () => {
                 .then(({ body }) => {
                     expect(body.article).to.contain.keys('article_id', 'title', 'body', 'votes', 'topic')
                 })
+        });
+        it('POST 400 if trying to post article with missing information', () => {
+            return request(app)
+                .post('/api/articles')
+                .send({
+                    title: 'creating a post is fun'
+                    , author: 'butter_bridge', topic: 'mitch'
+                })
+                .expect(400)
+                .then(({ body }) => {
+                    expect(body.msg).to.equal('Bad request')
+                })
+
         });
     });
     describe('/comments', () => {
