@@ -14,13 +14,15 @@ const postComment = (body, artId) => {
     })
 }
 
-const getArtComs = ({ article_id }, sort_by, order) => {
+const getArtComs = ({ article_id }, sort_by, order, limit = 10, p = 1) => {
     return connection.select('comments.*')
         .from('comments')
         .where('comments.article_id', article_id)
         .leftJoin('articles'
             , 'articles.article_id', 'comments.article_id')
         .orderBy(`comments.${sort_by || 'created_at'}`, order || "desc")
+        .limit(limit)
+        .offset((p - 1) * limit)
 }
 
 const findComment = (comment_id) => {

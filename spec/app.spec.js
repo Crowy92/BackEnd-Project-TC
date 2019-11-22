@@ -133,6 +133,15 @@ describe('/api', () => {
                     expect(body.msg).to.equal('Bad request');
                 });
         });
+        it('POST for an invalid article_id - status:400 bad request', () => {
+            return request(app)
+                .post('/api/articles/banana/comments')
+                .send({ username: 'butter_bridge' })
+                .expect(400)
+                .then(({ body }) => {
+                    expect(body.msg).to.equal('Bad request');
+                });
+        });
         it('`POST` 400 request does not include all the required keys', () => {
             return request(app)
                 .post('/api/articles/1/comments')
@@ -149,6 +158,37 @@ describe('/api', () => {
                 .then(({ body }) => {
                     expect(body.comments[0]).to.contain.keys('created_at', 'body', 'votes',
                         'article_id', 'author')
+                    expect(body.comments.length).to.equal(10)
+                })
+        });
+        it('GET 200 responds with an array of comments limited to specific limit', () => {
+            return request(app)
+                .get('/api/articles/1/comments?limit=5')
+                .expect(200)
+                .then(({ body }) => {
+                    expect(body.comments[0]).to.contain.keys('created_at', 'body', 'votes',
+                        'article_id', 'author')
+                    expect(body.comments.length).to.equal(5)
+                    expect(body.comments[0].comment_id).to.equal(2)
+                })
+        });
+        it('GET 200 responds with an array of comments limited to specific limit and offsets by required amount', () => {
+            return request(app)
+                .get('/api/articles/1/comments?limit=5&p=2')
+                .expect(200)
+                .then(({ body }) => {
+                    expect(body.comments[0]).to.contain.keys('created_at', 'body', 'votes',
+                        'article_id', 'author')
+                    expect(body.comments.length).to.equal(5)
+                    expect(body.comments[0].comment_id).to.equal(7)
+                })
+        });
+        it('GET 200 responds with an empty array when the page count is too high', () => {
+            return request(app)
+                .get('/api/articles/1/comments?limit=5&p=10')
+                .expect(200)
+                .then(({ body }) => {
+                    expect(body.comments.length).to.equal(0)
                 })
         });
         it('GET 404 responds a not found message if none can be found', () => {
@@ -204,6 +244,16 @@ describe('/api', () => {
                     expect(body.comments[0].body).to.equal('Ambidextrous marsupial')
                 })
         });
+        it('GET 200 responds with an array sorted by a query in a specified order', () => {
+            return request(app)
+                .get('/api/articles/1/comments?order=asc')
+                .expect(200)
+                .then(({ body }) => {
+                    expect(body.comments[0]).to.contain.keys('created_at', 'body', 'votes',
+                        'article_id', 'author')
+                    expect(body.comments[0].comment_id).to.equal(18)
+                })
+        });
         it('GET articles 200 responds with an array of all articles including their comment count', () => {
             return request(app)
                 .get('/api/articles')
@@ -215,7 +265,7 @@ describe('/api', () => {
         });
         it('DELETE request on api/articles responds with method not allowed message', () => {
             return request(app)
-                .post('/api/articles')
+                .delete('/api/articles')
                 .expect(405)
                 .then(({ body }) => {
                     expect(body.msg).to.equal('Method not allowed')
@@ -229,6 +279,7 @@ describe('/api', () => {
                     expect(body.articles).to.be.an('array')
                     expect(body.articles[0].topic).to.equal('mitch')
                     expect(body.articles[0].comment_count).to.equal('13')
+                    expect(body.total_count).to.equal(12)
                 })
         });
         it('GET articles 200 responds with an empty array when seraching for a topic that doesn"t exist', () => {
@@ -238,6 +289,14 @@ describe('/api', () => {
                 .then(({ body }) => {
                     expect(body.articles).to.be.an('array')
                     expect(body.articles.length).to.equal(0)
+                })
+        });
+        it('GET a non existant user responds with 404 not found', () => {
+            return request(app)
+                .get('/api/articles?author=not-an-author')
+                .expect(404)
+                .then(({ body }) => {
+                    expect(body.msg).to.equal('Not found')
                 })
         });
         it('GET articles 200 responds with an array filtered by topic and sorted', () => {
@@ -300,6 +359,47 @@ describe('/api', () => {
                 .then(({ body }) => {
                     expect(body.articles).to.be.an('array')
                     expect(body.articles[0].author).to.equal('icellusedkars')
+                })
+        });
+        it('GET with a limit query will limit the results to any number, 10 as default', () => {
+            return request(app)
+                .get('/api/articles')
+                .expect(200)
+                .then(({ body }) => {
+                    expect(body.articles).to.be.an('array')
+                    expect(body.articles.length).to.equal(10)
+                })
+        });
+        it('GET with a limit query will limit the results to any number, 10 as default', () => {
+            return request(app)
+                .get('/api/articles?limit=6')
+                .expect(200)
+                .then(({ body }) => {
+                    expect(body.articles).to.be.an('array')
+                    expect(body.articles.length).to.equal(6)
+                    expect(body.articles[0].article_id).to.equal(1)
+                })
+        });
+        it('GET with a limit query will limit the results to any number, 10 as default', () => {
+            return request(app)
+                .get('/api/articles?limit=6&p=2')
+                .expect(200)
+                .then(({ body }) => {
+                    expect(body.articles).to.be.an('array')
+                    expect(body.articles.length).to.equal(6)
+                    expect(body.articles[0].article_id).to.equal(7)
+                })
+        });
+        it('POST a new article responds with 201 and returns the created article', () => {
+            return request(app)
+                .post('/api/articles')
+                .send({
+                    title: 'creating a post is fun', body: 'But it can be challenging'
+                    , author: 'butter_bridge', topic: 'mitch'
+                })
+                .expect(201)
+                .then(({ body }) => {
+                    expect(body.article).to.contain.keys('article_id', 'title', 'body', 'votes', 'topic')
                 })
         });
     });

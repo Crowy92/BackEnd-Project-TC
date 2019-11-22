@@ -1,6 +1,7 @@
 const articleRouter = require('express').Router();
 const badMethod = require('./utilityFuncs')
-const { getArticle, patchArticle, postArticleCom, getComments, getArticles } = require('../controllers/articlesController.js')
+const { getArticle, patchArticle, postArticleCom, getComments
+    , getArticles, postArticle } = require('../controllers/articlesController.js')
 console.log(getArticle, '<--- getArticle')
 
 articleRouter.route('/:article_id')
@@ -15,6 +16,7 @@ articleRouter.route('/:article_id/comments')
 
 articleRouter.route('/')
     .get(getArticles)
+    .post(postArticle)
     .all(badMethod);
 
 module.exports = articleRouter;
