@@ -1,4 +1,6 @@
 const connection = require('../db/connection')
+const { findUser } = require('../models/usersModel')
+const { fetchTopic } = require('../models/topicsModel')
 
 const findArticle = (article_id) => {
     return connection.select('articles.*')
@@ -50,6 +52,40 @@ const fetchArticlesCounter = (sort_by, order, author, topic) => {
         })
 }
 
+const fetchArticles2 = (sort_by, order, author, topic, limit = 10, p = 1) => {
+    const foundArts = connection.select('articles.*').from('articles')
+        .count({ comment_count: 'comment_id' })
+        .leftJoin('comments', 'articles.article_id', 'comments.article_id')
+        .groupBy('articles.article_id')
+        .orderBy(sort_by || "created_at", order || "desc")
+        .modify((query) => {
+            if (author) query.where('articles.author', author);
+            if (topic) query.where({ topic });
+        })
+        .limit(limit)
+        .offset((p - 1) * limit)
+    if (author) {
+        return Promise.all([foundArts, findUser(author)])
+            .then(([articles, user]) => {
+                if (articles.length < 1 && !user) {
+                    return Promise.reject({ status: 404, msg: "Not found" })
+                } else return articles;
+            })
+    } else if (topic) {
+        return Promise.all([foundArts, fetchTopic(topic)])
+            .then(([articles, topic]) => {
+                if (articles.length < 1 && topic.length < 1) {
+                    return Promise.reject({ status: 404, msg: "Not found" })
+                } else return articles;
+            })
+    } else {
+        return Promise.resolve(foundArts)
+            .then(foundArts => {
+                return foundArts
+            })
+    }
+}
+
 const createArticle = (body) => {
     const insertObj = {
         title: body.title, body: body.body, topic: body.topic
@@ -65,5 +101,5 @@ const createArticle = (body) => {
 
 module.exports = {
     findArticle, updateArticle, fetchArticles
-    , fetchArticlesCounter, createArticle
+    , fetchArticlesCounter, createArticle, fetchArticles2
 }

@@ -10,6 +10,9 @@ const postComment = (body, artId) => {
         author: body.username, article_id: artId, votes: 0
         , created_at: new Date(), body: body.body
     }
+    if (!body.body || !body.username) {
+        return Promise.reject({ status: 400, msg: 'Bad request' })
+    }
     return connection('comments').insert(insertObj).returning('*').then((comment) => {
         return comment[0];
     })

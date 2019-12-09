@@ -1,6 +1,6 @@
 
 const { findArticle, updateArticle, fetchArticles
-    , fetchArticlesCounter, createArticle } = require('../models/articlesModel')
+    , fetchArticlesCounter, createArticle, fetchArticles2 } = require('../models/articlesModel')
 const { findComments, postComment, getArtComs } = require('../models/commentsModel')
 const { findUser } = require('../models/usersModel')
 const { fetchTopic } = require('../models/topicsModel')
@@ -39,31 +39,17 @@ exports.getComments = (req, res, next) => {
 }
 
 exports.getArticles = (req, res, next) => {
-    fetchArticlesCounter(req.query.sort_by, req.query.order, req.query.author, req.query.topic)
-        .then((articles) => {
-            const total_count = articles.length;
-            fetchArticles(req.query.sort_by, req.query.order, req.query.author, req.query.topic
-                , req.query.limit, req.query.p)
-                .then((articles) => {
-                    if (articles.length < 1 && req.query.author) {
-                        findUser(req.query.author).then(author => {
-                            if (author) res.status(200).send({ articles, total_count })
-                            else res.status(404).send({ msg: 'Not found' })
-                        }).catch((err) => {
-                            (res.status(404).send({ msg: 'Not found' }))
-                        })
-                    } else if (articles.length < 1 && req.query.topic) {
-                        fetchTopic(req.query.topic).then((topic) => {
-                            if (topic.length > 0) res.status(200).send({ articles, total_count })
-                            else (next(err))
-                        }).catch((err) => {
-                            res.status(404).send({ msg: 'Not found' })
-                        })
-                    }
-                    else res.status(200).send({ articles, total_count })
-                })
-        }).catch((err) => {
-            if (err.code) next(err)
-            else res.status(404).send({ msg: 'Not found' })
+    const total_count = fetchArticlesCounter(req.query.sort_by, req.query.order, req.query.author, req.query.topic)
+        .then(articles => {
+            return articles.length;
         })
+    const articles = fetchArticles2(req.query.sort_by, req.query.order, req.query.author, req.query.topic
+        , req.query.limit, req.query.p)
+        .then((articles) => {
+            return articles;
+        })
+    return Promise.all([total_count, articles])
+        .then(([total_count, articles]) => {
+            res.status(200).send({ articles, total_count })
+        }).catch(next)
 }
