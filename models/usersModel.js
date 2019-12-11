@@ -8,4 +8,11 @@ const findUser = (username) => {
         })
 }
 
-module.exports = { findUser }
+const findUsers = () => {
+    return connection('users').select('*')
+        .then(users => {
+            return users;
+        })
+}
+
+module.exports = { findUser, findUsers }
