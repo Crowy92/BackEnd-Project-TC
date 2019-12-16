@@ -18,6 +18,15 @@ const findArticle = (article_id) => {
         })
 }
 
+const removeArticle = (article_id) => {
+    return connection('articles').where({ article_id })
+        .del()
+        .then(deleted => {
+            if (deleted === 0) return Promise.reject({ status: 404, msg: 'Not found' })
+            return deleted;
+        })
+}
+
 const updateArticle = (votes = 0, article_id) => {
     return connection('articles').where({ article_id })
         .increment({ votes }).returning('*').then((updated) => {
@@ -101,5 +110,5 @@ const createArticle = (body) => {
 
 module.exports = {
     findArticle, updateArticle, fetchArticles
-    , fetchArticlesCounter, createArticle, fetchArticles2
+    , fetchArticlesCounter, createArticle, fetchArticles2, removeArticle
 }

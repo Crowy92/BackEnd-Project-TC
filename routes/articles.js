@@ -1,12 +1,13 @@
 const articleRouter = require('express').Router();
 const badMethod = require('./utilityFuncs')
 const { getArticle, patchArticle, postArticleCom, getComments
-    , getArticles, postArticle } = require('../controllers/articlesController.js')
+    , getArticles, postArticle, deleteArticle } = require('../controllers/articlesController.js')
 console.log(getArticle, '<--- getArticle')
 
 articleRouter.route('/:article_id')
     .get(getArticle)
     .patch(patchArticle)
+    .delete(deleteArticle)
     .all(badMethod);
 
 articleRouter.route('/:article_id/comments')

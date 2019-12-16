@@ -1,5 +1,5 @@
 
-const { findArticle, updateArticle, fetchArticles
+const { findArticle, updateArticle, fetchArticles, removeArticle
     , fetchArticlesCounter, createArticle, fetchArticles2 } = require('../models/articlesModel')
 const { findComments, postComment, getArtComs } = require('../models/commentsModel')
 const { findUser } = require('../models/usersModel')
@@ -15,6 +15,12 @@ exports.getArticle = (req, res, next) => {
 exports.patchArticle = (req, res, next) => {
     updateArticle(req.body.inc_votes, req.params.article_id).then((article) => {
         res.status(200).send({ article })
+    }).catch(next)
+}
+
+exports.deleteArticle = (req, res, next) => {
+    removeArticle(req.params.article_id).then((response) => {
+        res.sendStatus(204)
     }).catch(next)
 }
 
