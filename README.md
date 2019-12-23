@@ -3,88 +3,156 @@
 
 This is the backend database used in collaboration with the front end project I created which you can access via Heroku on this web page: https://tom-crowther-fe.herokuapp.com/
 
+# BE NC NEWS
+
+The NC News repository is a RESTful API built using Node.js for both accessing and contributing topics, articles and comments. 
+
+The hosted version can be viewed [here] (https://tom-crowther-fe.herokuapp.com/)
+
 ## Getting Started
 
-To get started with the project, clone the repo and download it to a suitable folder on your desktop.  open it in vs code and run npm install to download all the dependencies that you will need such as knex, chai, mocha, supertest etc.
+These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+
+### Prerequisites
+
+In order to run this project, the following prerequisites are required to be installed globally:
+
+| Dependency | Version |
+| ---------- | ------- |
+| PostgreSQL | 12.1    |
+| Node.JS    | 12.9.1  |
+| NPM        | 6.10.3  |
+
+The following developer dependencies will need to be installed:
+
+| Dependency    | Version |
+| ------------- | ------- |
+| Express       | 4.17.1  |
+| Knex          | 0.20.2  |
+| Node Postgres | 7.12.1  |
+| Chai          | 4.2.0   |
+| Mocha         | 6.2.2   |
+| Supertest     | 4.0.2   |
 
 ### Installing
 
-A step by step series of examples that tell you how to get a development env running
+This section details the steps to get the development environment up and running. 
 
-Say what the step will be
 
-```
-Give the example
-```
-
-And repeat
+Step 1: Clone the repository with the command: 
 
 ```
-until finished
+$ git clone https://github.com/Crowy92/BackEnd-Project-TC.git
 ```
 
-End with an example of getting some data out of the system or using it for a little demo
+Step 2: Open the repository in your preferred code editor e.g VSCode, Atom etc
+
+Step 3: Navigate into the cloned repository, install the dependencies using the terminal command:
+
+```
+npm i
+```
+
+Step 4: Create a local `knexfile.js` file in the main directory and insert the below code:
+
+```const { DB_URL } = process.env;
+const ENV = process.env.NODE_ENV || "development";
+
+const baseConfig = {
+  client: "pg",
+  migrations: {
+    directory: "./db/migrations"
+  },
+  seeds: {
+    directory: "./db/seeds"
+  }
+};
+
+const customConfig = {
+  production: {
+    connection: `${DB_URL}?ssl=true`,
+  },
+  development: {
+    connection: {
+      database: "nc_news"
+      // username: only applicable if Linux User,
+      // password: only applicable if Linux User 
+    }
+  },
+  test: {
+    connection: {
+      database: "nc_news_test"
+      // username: only applicable if Linux User,
+      // password: only applicable if Linux User
+    }
+  }
+};
+
+module.exports = { ...customConfig[ENV], ...baseConfig };
+```
+
+NB: postGreSQL will require a username and password if you are running a linux system. If you are running on Mac OSX, you can remove the username and password keys from both development and test.
+
+Step 5: Run the following terminal commands to set up your local test and development databases:
+
+```
+$ npm run setup-dbs
+$ npm run seed
+```
+
+To see your databases you can run the command:
+
+```
+$ psql
+\c nc_news_test
+```
+
+or 
+
+```
+$ psql -f queries.sql > output.txt
+
+```
+
+The above command with create an .txt file, displaying the tables and the data inserted.
 
 ## Running the tests
 
-Explain how to run the automated tests for this system
-
-### Break down into end to end tests
-
-Explain what these tests test and why
+To test the endpoints locally and ensure that everything has been configured correctly use the command:
 
 ```
-Give an example
+$ npm t
 ```
+### Endpoints
 
-### And coding style tests
+The table below outlines the purpose of each test category, for additional details please review the `app.spec.js` file.
 
-Explain what these tests test and why
 
-```
-Give an example
-```
+
+Endpoint                           | Request | Tests                                                                                                                                                                                                                                                                                                                                                   |
+| ---------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| /api                               | GET     | Ensures that a JSON detailing the available endpoints and the requirements within each in served upon receiving a request.                                                                                                                                                                                                                              |
+| /api/topics                        | GET     | Ensures that all topics are served. These are served as an array of each topic.                                                                                                                                                                                                                                                                         |
+| /api/topics                        | POST    | Ensures that a new topic may be posted. An error is returned if the slug is less than 3 characters in length or a description is not provided.                                                                                                                                                                                                          |
+| /api/users                         | GET     | Ensures that all users are served. These are served as an array of users.                                                                                                                                                                                                                                                                               |
+| /api/users/:username               | GET     | Ensures that details of the requested user are served. An error is returned if the requested user does not exist.                                                                                                                                                                                                                                       |
+| /api/articles                      | GET     | Ensures that all articles are served in an array. Also ensures that the 6 valid queries (sort-by, order, author, topic, limit and page) function as intended, returning an error if an invalid value is provided, or a page requested that does not exist.                                                                                              |
+| /api/articles                      | POST    | Ensures that a new article may be posted. An error is returned if either the topic or user posting the article do not exist.                                                                                                                                                                                                                           |
+| /api/articles/:article_id          | GET     | Ensures that the correct article is displayed. An error is returned if the requested article ID does not exist or a non-integer is entered.                                                                                                                                                                                                             |
+| /api/articles/:article_id          | PATCH   | Ensures that the requested changes are made to the article's vote property, serving the updated article. If additional keys are provided, they are ignored and an error is returned if a non-integer is entered as the value of inc_votes.                                                                                                              |
+| /api/articles/:article_id          | DELETE  | Ensures that the specified article is deleted, along with any associated comments. An error is returned if the article ID does not exist or a non-integer is entered.                                                                                                                                                                                   |
+| /api/articles/:article_id/comments | GET     | Ensures that all comments from the specified article are served. An error is returned if the requested article ID does not exist or a non-integer is entered. Also ensures that the 4 valid queries (sort-by, order, limit and page) function as intended, returning an error if an invalid value is provided, or a page requested that does not exist. |
+| /api/articles/:article_id/comments | POST    | Ensures that a new comment is posted to the specified article, serving the complete new comment. Ensures an error is returned if an invalid or non-existent article ID is entered. Also ensures that an error is returned if insufficient data is received in the body of the request                                                                   |
+| /api/comments/:comment_id          | PATCH   | Ensures that the requested changes are made to the comment's vote property, serving the updated comment. Ensures that if additional keys are provided, they are ignored and that an error is returned if a non-integer is entered as the value of inc_votes.                                                                                            |
+| /api/comments/:comment_id          | DELETE  | Ensures the specified comment is deleted and that an error is returned if the specified comment does not exist or a non-integer is entered                                                                                                                                                                                                              |
 
 ## Deployment
 
-Add additional notes about how to deploy this on a live system
+Providing you have accurately followed the above steps, the repository will be ready for deployment to a live system using a production database e.g. Heroku.
 
-## Built With
+---
 
-* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
-* [Maven](https://maven.apache.org/) - Dependency Management
-* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
-
-## Contributing
-
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
-
-## Versioning
-
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
-
-## Authors
-
-* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
-
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
-
-## Acknowledgments
-
-* Hat tip to anyone whose code was used
-* Inspiration
-* etc
-
-
-
-
-
-
-## Endpoints 
+## Endpoints with extra detail
 
 ```http
 GET /api/topics
@@ -92,7 +160,7 @@ GET /api/topics
 
 #### Responds with
 
-- an array of topic objects, each of which should have the following properties:
+- an array of topic objects, each of which has the following properties:
   - `slug`
   - `description`
 
@@ -104,7 +172,7 @@ GET /api/users/:username
 
 #### Responds with
 
-- a user object which should have the following properties:
+- a user object which has the following properties:
   - `username`
   - `avatar_url`
   - `name`
@@ -117,7 +185,7 @@ GET /api/articles/:article_id
 
 #### Responds with
 
-- an article object, which should have the following properties:
+- an article object, which has the following properties:
 
   - `author` which is the `username` from the users table
   - `title`
@@ -126,7 +194,7 @@ GET /api/articles/:article_id
   - `topic`
   - `created_at`
   - `votes`
-  - `comment_count` which is the total count of all the comments with this article_id - you should make use of knex queries in order to achieve this
+  - `comment_count` which is the total count of all the comments with this article_id 
 
 ---
 
@@ -138,7 +206,7 @@ PATCH /api/articles/:article_id
 
 - an object in the form `{ inc_votes: newVote }`
 
-  - `newVote` will indicate how much the `votes` property in the database should be updated by
+  - `newVote` will indicate how much the `votes` property in the database has been updated by
 
   e.g.
 
@@ -174,7 +242,7 @@ GET /api/articles/:article_id/comments
 
 #### Responds with
 
-- an array of comments for the given `article_id` of which each comment should have the following properties:
+- an array of comments for the given `article_id` of which each comment has the following properties:
   - `comment_id`
   - `votes`
   - `created_at`
@@ -194,16 +262,16 @@ GET /api/articles
 
 #### Responds with
 
-- an `articles` array of article objects, each of which should have the following properties:
+- an `articles` array of article objects, each of which has the following properties:
   - `author` which is the `username` from the users table
   - `title`
   - `article_id`
   - `topic`
   - `created_at`
   - `votes`
-  - `comment_count` which is the total count of all the comments with this article_id - you should make use of knex queries in order to achieve this
+  - `comment_count` which is the total count of all the comments with this article_id
 
-#### Should accept queries
+#### accepts queries
 
 - `sort_by`, which sorts the articles by any valid column (defaults to date)
 - `order`, which can be set to `asc` or `desc` for ascending or descending (defaults to descending)
@@ -248,41 +316,15 @@ DELETE /api/comments/:comment_id
 
 ---
 
-# STOP!
-
-If you have reached this point, go back and review all of the routes that you have created. Consider whether there are any errors that could occur that you haven't yet accounted for. If you identify any, write a test, and then handle the error. Even if you can't think of a specific error for a route, every controller that invokes a promise-based model should contain a `.catch` block to prevent unhandled promise rejections.
-
-As soon as you think that you have handled all the possible errors that you can think of, let someone on the teaching team know. One of us will be able to take a look at your code and give you some feedback. While we are looking at your code, you can continue with the following:
-
-# Continue...
-
----
-
 ```http
 GET /api
 ```
 
 #### Responds with
 
-- JSON describing all the available endpoints on your API
+- JSON describing all the available endpoints on API
 
 ---
-
-### Step 3 - Hosting
-
-Make sure your application and your database is hosted using Heroku
-
-See the hosting.md file in this repo for more guidance
-
-### Step 4 - README
-
-Write a README for your project. Check out this [guide](https://gist.github.com/PurpleBooth/109311bb0361f32d87a2) for what sort of things should be included.
-
-It should also include the link to where your Heroku app is hosted.
-
-Take a look at GitHub's guide for [mastering markdown](https://guides.github.com/features/mastering-markdown/) for making it look pretty!
-
-### Optional Extras
 
 #### Pagination
 
@@ -292,10 +334,10 @@ To make sure that an API can handle large amounts of data, it is often necessary
 GET /api/articles
 ```
 
-- Should accepts the following queries:
+- accepts the following queries:
   - `limit`, which limits the number of responses (defaults to 10)
   - `p`, stands for page which specifies the page at which to start (calculated using limit)
-- add a `total_count` property, displaying the total number of articles (**this should display the total number of articles with any filters applied, discounting the limit**)
+- add a `total_count` property, displaying the total number of articles (**this displays the total number of articles with any filters applied, discounting the limit**)
 
 ---
 
@@ -303,7 +345,7 @@ GET /api/articles
 GET /api/articles/:article_id/comments
 ```
 
-Should accept the following queries:
+accepts the following queries:
 
 - `limit`, which limits the number of responses (defaults to 10)
 - `p`, stands for page which specifies the page at which to start (calculated using limit)
@@ -317,6 +359,8 @@ DELETE /api/articles/:article_id
 
 POST /api/topics
 
-POST /api/users
 GET /api/users
 ```
+## Acknowledgments
+
+* Northcoders Team for assistance and insight.
